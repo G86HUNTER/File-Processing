@@ -3,6 +3,9 @@
 **Author:** Aryan Gaikwad  
 **Design Reference:** Google Cloud Platform (GCP) Console / Google Drive Material 3  
 
+🌐 **Live Public Website:** [https://g86hunter.github.io/File-Processing/](https://g86hunter.github.io/File-Processing/)  
+📦 **GitHub Repository:** [https://github.com/G86HUNTER/File-Processing](https://github.com/G86HUNTER/File-Processing)  
+
 ---
 
 ## 📌 Project Overview
