@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Cloud | Scalable Storage Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto:wght@300;400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="gcp-theme">
+
+  <!-- TOP GOOGLE APP BAR -->
+  <header class="gcp-header">
+    <div class="header-left">
+      <div class="google-brand">
+        <svg class="gcp-logo" viewBox="0 0 192 192" width="26" height="26">
+          <path fill="#4285F4" d="M168,96c0-5.8-0.5-11.4-1.5-16.7H96v31.7h40.4c-1.7,9.3-7,17.1-14.9,22.4v18.6h24.1C159.8,138.8,168,119,168,96z"/>
+          <path fill="#34A853" d="M96,168c19.4,0,35.8-6.4,47.7-17.4l-24.1-18.6c-6.7,4.5-15.3,7.1-23.6,7.1c-18.2,0-33.6-12.3-39.1-28.8H32v19.2C43.8,153,68.2,168,96,168z"/>
+          <path fill="#FBBC04" d="M56.9,110.3c-1.4-4.2-2.2-8.7-2.2-13.3s0.8-9.1,2.2-13.3V64.5H32C26.9,74.7,24,86,24,98s2.9,23.3,8,33.5L56.9,110.3z"/>
+          <path fill="#EA4335" d="M96,54c10.6,0,20.1,3.6,27.6,10.8l20.7-20.7C131.8,32.7,115.4,26,96,26C68.2,26,43.8,41,32,64.5l24.9,19.2C62.4,66.3,77.8,54,96,54z"/>
+        </svg>
+        <span class="brand-title">Google Cloud</span>
+        <span class="divider">/</span>
+        <span class="service-name">Scalable Storage Console</span>
+      </div>
+
+      <div class="project-pill">
+        <span class="material-symbols-outlined project-icon">layers</span>
+        <span class="project-name">cc-cluster-prod</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="gcp-search-bar">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input type="text" id="globalSearchInput" placeholder="Search folders, users, pods, or failure logs (Press '/' to search)">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="status-indicator-pill">
+        <span class="pulse-dot"></span>
+        <span class="status-label">Cluster Live (SSE Synced)</span>
+      </div>
+
+      <button class="icon-btn" title="Refresh state" id="refreshBtn">
+        <span class="material-symbols-outlined">refresh</span>
+      </button>
+
+      <div class="user-avatar" title="Signed in as Aryan Gaikwad (Admin)">
+        <span>AG</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <div class="app-layout">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="gcp-sidebar">
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">STORAGE & SCALABILITY</div>
+        
+        <button class="nav-item active" data-view="dashboardView">
+          <span class="material-symbols-outlined">space_dashboard</span>
+          <span class="nav-text">Cluster Overview</span>
+        </button>
+
+        <button class="nav-item" data-view="uploadView">
+          <span class="material-symbols-outlined">drive_folder_upload</span>
+          <span class="nav-text">Upload Folders</span>
+          <span class="pill-chip">Live</span>
+        </button>
+
+        <button class="nav-item" data-view="auditView">
+          <span class="material-symbols-outlined">folder_managed</span>
+          <span class="nav-text">Folder Audit Logs</span>
+          <span class="pill-chip error" id="failedCountBadge">0 failed</span>
+        </button>
+
+        <button class="nav-item" data-view="stressView">
+          <span class="material-symbols-outlined">speed</span>
+          <span class="nav-text">Concurrency Load Test</span>
+          <span class="pill-chip highlight">Demo</span>
+        </button>
+
+        <div class="nav-divider"></div>
+
+        <button class="nav-item" id="resetSystemBtn" title="Reset cluster test data">
+          <span class="material-symbols-outlined">restart_alt</span>
+          <span class="nav-text">Reset / Re-seed Data</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status-box">
+          <div class="status-row">
+            <span class="status-title">Cluster Load Balancer</span>
+            <span class="badge-status-green">ONLINE</span>
+          </div>
+          <div class="status-progress-track">
+            <div class="status-progress-bar" id="loadBar" style="width: 25%;"></div>
+          </div>
+          <div class="status-sub">Autoscaling: <strong id="activePodsCount">2</strong> active worker pods</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN BODY -->
+    <main class="gcp-main">
+      
+      <!-- SUB HEADER -->
+      <div class="sub-header">
+        <div class="breadcrumb">
+          <span class="crumb-link">Storage Cluster</span>
+          <span class="material-symbols-outlined separator">chevron_right</span>
+          <span class="crumb-active" id="currentPageTitle">Cluster Overview & Scalability</span>
+        </div>
+
+        <div class="sub-actions">
+          <button class="gcp-btn gcp-btn-secondary" id="quickTestBtn">
+            <span class="material-symbols-outlined">rocket_launch</span>
+            Run Concurrency Test
+          </button>
+          <button class="gcp-btn gcp-btn-primary" id="openUploadBtn">
+            <span class="material-symbols-outlined">upload</span>
+            Upload New Folder
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= SECTION 1: DASHBOARD OVERVIEW ================= -->
+      <section class="content-view active" id="dashboardView">
+        
+        <!-- METRICS CARDS -->
+        <div class="metrics-grid">
+          
+          <div class="metric-card">
+            <div class="card-header-row">
+              <span class="metric-title">TOTAL FOLDERS UPLOADED</span>
+              <span class="material-symbols-outlined card-icon blue">folder_zip</span>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-number" id="metricTotalUploads">0</span>
+              <span class="trend positive">
+                <span class="material-symbols-outlined">trending_up</span> Live
+              </span>
+            </div>
+            <div class="metric-footer">
+              <span id="metricSuccessRatio">100% success</span> across all users
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="card-header-row">
+              <span class="metric-title">ACTIVE CONCURRENT REQUESTS</span>
+              <span class="material-symbols-outlined card-icon green">sync_alt</span>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-number" id="metricActiveReq">0</span>
+              <span class="trend neutral">Peak: <strong id="metricPeakReq">0</strong></span>
+            </div>
+            <div class="metric-footer">
+              Balanced across active pods
+            </div>
+          </div>
+
+          <div class="metric-card border-accent-red">
+            <div class="card-header-row">
+              <span class="metric-title">REJECTED / FAILED FOLDERS</span>
+              <span class="material-symbols-outlined card-icon red">error</span>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-number red" id="metricFailedUploads">0</span>
+              <span class="badge-status-red" id="metricFailureRate">0% fail</span>
+            </div>
+            <div class="metric-footer">
+              Actual reasons diagnosed below
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="card-header-row">
+              <span class="metric-title">AUTOSCALING WORKER PODS</span>
+              <span class="material-symbols-outlined card-icon yellow">dns</span>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-number" id="metricWorkerPods">2</span>
+              <span class="badge-status-yellow">Scale 2-10</span>
+            </div>
+            <div class="metric-footer">
+              Zone: us-central1 (Multi-zone)
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="card-header-row">
+              <span class="metric-title">STORAGE VOLUME USED</span>
+              <span class="material-symbols-outlined card-icon blue">hard_drive</span>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-number" id="metricStorageBytes">0 B</span>
+            </div>
+            <div class="metric-footer">
+              Google Cloud Storage standard tier
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="card-header-row">
+              <span class="metric-title">P99 RESPONSE LATENCY</span>
+              <span class="material-symbols-outlined card-icon green">timer</span>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-number" id="metricAvgLatency">38 ms</span>
+            </div>
+            <div class="metric-footer">
+              Non-blocking asynchronous I/O
+            </div>
+          </div>
+
+        </div>
+
+        <!-- CHARTS & PODS SECTION -->
+        <div class="dashboard-charts-grid">
+          
+          <!-- REAL-TIME CONCURRENCY CHART -->
+          <div class="gcp-card chart-card">
+            <div class="card-header">
+              <div class="header-titles">
+                <h3 class="card-title">Real-Time Concurrency & Autoscaling Load</h3>
+                <p class="card-subtitle">Live request throughput balanced against dynamic replica pods</p>
+              </div>
+              <div class="header-actions">
+                <span class="live-pill"><span class="pulse-dot"></span> LIVE 1.5s</span>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="concurrencyChart"></canvas>
+            </div>
+          </div>
+
+          <!-- WORKER PODS WIDGET -->
+          <div class="gcp-card pods-card">
+            <div class="card-header">
+              <div class="header-titles">
+                <h3 class="card-title">Cloud Load Balancer Nodes</h3>
+                <p class="card-subtitle">Dynamic traffic distribution</p>
+              </div>
+              <span class="cluster-badge" id="podsStatusBadge">2 Pods Active</span>
+            </div>
+            <div class="pods-list" id="podsListContainer">
+              <!-- Dynamically populated pods -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RECENT UPLOADS TABLE -->
+        <div class="gcp-card table-card">
+          <div class="card-header">
+            <div class="header-titles">
+              <h3 class="card-title">Recent Folder Ingestion Stream</h3>
+              <p class="card-subtitle">Real-time uploads showing user names, success statuses, and actual rejection reasons</p>
+            </div>
+            <div class="header-actions">
+              <button class="gcp-btn gcp-btn-secondary btn-sm" id="viewAllAuditBtn">
+                View All Logs
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="gcp-table" id="dashboardRecentTable">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">STATUS</th>
+                  <th>FOLDER NAME</th>
+                  <th>USER NAME</th>
+                  <th>FILES</th>
+                  <th>SIZE</th>
+                  <th>WORKER POD</th>
+                  <th>TIME</th>
+                  <th>OUTCOME / ACTUAL REASON</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardRecentTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= SECTION 2: UPLOAD FOLDER VIEW ================= -->
+      <section class="content-view" id="uploadView">
+        
+        <div class="upload-container">
+          
+          <div class="upload-left-col">
+            <div class="gcp-card">
+              <div class="card-header">
+                <div class="header-titles">
+                  <h3 class="card-title">Upload Folder to Scalable Cloud</h3>
+                  <p class="card-subtitle">Preserves full folder hierarchies, subfolders, and metadata</p>
+                </div>
+              </div>
+
+              <form id="folderUploadForm">
+                
+                <div class="form-group">
+                  <label class="form-label" for="usernameInput">User Name / Tenant Identity <span class="required">*</span></label>
+                  <div class="input-with-selector">
+                    <input type="text" id="usernameInput" class="gcp-input" placeholder="e.g. aryan.gaikwad" value="aryan.gaikwad" required>
+                    <select id="userPresetSelect" class="gcp-select">
+                      <option value="aryan.gaikwad">aryan.gaikwad (Quota: 150MB)</option>
+                      <option value="cloud.admin">cloud.admin (Quota: 1GB)</option>
+                      <option value="student_rahul">student_rahul (Quota: 50MB)</option>
+                      <option value="guest_user">guest_user (Strict Quota: 25MB)</option>
+                      <option value="custom">-- Custom User --</option>
+                    </select>
+                  </div>
+                  <span class="form-help">Identifies the owner in the audit log and validates user storage quotas.</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="folderNameInput">Target Folder Name</label>
+                  <input type="text" id="folderNameInput" class="gcp-input" placeholder="Leave blank to use uploaded folder name">
+                </div>
+
+                <!-- DRAG AND DROP ZONE -->
+                <div class="drop-zone" id="dropZone">
+                  <div class="drop-zone-content">
+                    <div class="drop-icon-wrapper">
+                      <span class="material-symbols-outlined drop-icon">cloud_upload</span>
+                    </div>
+                    <h4 class="drop-title">Drag & Drop an entire folder here</h4>
+                    <p class="drop-subtitle">or browse your computer to select a directory</p>
+                    
+                    <div class="drop-buttons">
+                      <label class="gcp-btn gcp-btn-primary" for="folderFileInput">
+                        <span class="material-symbols-outlined">folder_open</span>
+                        Choose Folder
+                      </label>
+                      <input type="file" id="folderFileInput" webkitdirectory directory multiple style="display: none;">
+                    </div>
+
+                    <div class="drop-specs">
+                      <span><span class="material-symbols-outlined tiny-icon">check_circle</span> Preserves subfolders</span>
+                      <span><span class="material-symbols-outlined tiny-icon">security</span> Security Policy Checked</span>
+                      <span><span class="material-symbols-outlined tiny-icon">speed</span> High-speed streaming</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SELECTED FOLDER SUMMARY -->
+                <div class="selected-folder-panel" id="selectedFolderPanel" style="display: none;">
+                  <div class="folder-header-info">
+                    <span class="material-symbols-outlined folder-avatar">folder</span>
+                    <div class="info-meta">
+                      <strong class="selected-name" id="selectedFolderName">My_Folder</strong>
+                      <span class="selected-specs" id="selectedFolderSpecs">0 files (0 MB)</span>
+                    </div>
+                    <button type="button" class="icon-btn text-danger" id="clearSelectionBtn" title="Remove selection">
+                      <span class="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+
+                  <div class="file-list-preview" id="fileListPreview"></div>
+
+                  <!-- UPLOAD PROGRESS -->
+                  <div class="upload-progress-box" id="uploadProgressBox" style="display: none;">
+                    <div class="progress-labels">
+                      <span id="uploadProgressStatus">Uploading files to cluster...</span>
+                      <span id="uploadProgressPct">0%</span>
+                    </div>
+                    <div class="gcp-progress-track">
+                      <div class="gcp-progress-bar" id="uploadProgressBar" style="width: 0%;"></div>
+                    </div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="gcp-btn gcp-btn-primary btn-block" id="startUploadBtn">
+                      <span class="material-symbols-outlined">send</span>
+                      Confirm & Upload Folder to Cloud Cluster
+                    </button>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: RULES & QUOTA -->
+          <div class="upload-right-col">
+            
+            <div class="gcp-card">
+              <div class="card-header">
+                <div class="header-titles">
+                  <h3 class="card-title">Admission & Policy Rules</h3>
+                  <p class="card-subtitle">Reasons why an upload will be approved or rejected</p>
+                </div>
+              </div>
+
+              <div class="policy-list">
+                <div class="policy-item">
+                  <span class="material-symbols-outlined policy-icon blue">verified_user</span>
+                  <div class="policy-details">
+                    <strong>Storage Quota Enforcement</strong>
+                    <p>Each tenant has a quota limit. If exceeded, rejected with reason: <code>Storage Quota Exceeded</code>.</p>
+                  </div>
+                </div>
+
+                <div class="policy-item">
+                  <span class="material-symbols-outlined policy-icon red">security</span>
+                  <div class="policy-details">
+                    <strong>Security Policy (Executable Blocker)</strong>
+                    <p>Folders containing executable scripts (<code>.exe, .bat, .cmd, .vbs</code>) are rejected immediately.</p>
+                  </div>
+                </div>
+
+                <div class="policy-item">
+                  <span class="material-symbols-outlined policy-icon green">dynamic_feed</span>
+                  <div class="policy-details">
+                    <strong>Multi-User Concurrency Handling</strong>
+                    <p>Simultaneous uploads from multiple users are load balanced across active worker pods without bottlenecks.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- USER QUOTA WIDGET -->
+            <div class="gcp-card user-quota-card">
+              <div class="card-header">
+                <h3 class="card-title">Tenant Storage Quota</h3>
+              </div>
+              <div class="quota-body">
+                <div class="quota-user-line">
+                  <span class="material-symbols-outlined">person</span>
+                  <strong id="activeTenantName">aryan.gaikwad</strong>
+                </div>
+                <div class="gcp-progress-track">
+                  <div class="gcp-progress-bar" id="userQuotaBar" style="width: 12%;"></div>
+                </div>
+                <div class="quota-footer">
+                  <span id="userQuotaText">18.2 MB of 150 MB used</span>
+                  <span class="quota-badge green">AVAILABLE</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= SECTION 3: AUDIT & FAILURE LOGS VIEW ================= -->
+      <section class="content-view" id="auditView">
+        
+        <div class="gcp-card">
+          <div class="card-header flex-wrap">
+            <div class="header-titles">
+              <h3 class="card-title">Folder Upload Audit & Failure Inspector</h3>
+              <p class="card-subtitle">Examine all uploads, user owners, timestamps, and precise failure causes</p>
+            </div>
+
+            <div class="filter-toolbar">
+              <div class="filter-group">
+                <button class="filter-chip active" data-filter="all">All Uploads (<span id="countAll">0</span>)</button>
+                <button class="filter-chip" data-filter="SUCCESS">Successful (<span id="countSuccess">0</span>)</button>
+                <button class="filter-chip error-chip" data-filter="FAILED">Failed / Rejected (<span id="countFailed">0</span>)</button>
+              </div>
+
+              <div class="table-search">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="auditSearchInput" placeholder="Filter by folder, user, or reason...">
+              </div>
+            </div>
+          </div>
+
+          <!-- BANNER FOR FAILED FOLDERS -->
+          <div class="gcp-alert-banner" id="failureAlertBanner" style="display: none;">
+            <span class="material-symbols-outlined alert-icon">warning</span>
+            <div class="alert-content">
+              <strong>Failures Detected:</strong>
+              <span id="failureAlertText">Folders rejected due to storage quota or security rules are highlighted below with exact causes.</span>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="gcp-table" id="auditTable">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">STATUS</th>
+                  <th>FOLDER NAME</th>
+                  <th>USER NAME</th>
+                  <th>FILES</th>
+                  <th>TOTAL SIZE</th>
+                  <th>WORKER POD</th>
+                  <th>TIMESTAMP</th>
+                  <th>OUTCOME / ACTUAL REASON</th>
+                  <th style="text-align: right;">ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-pagination" id="tablePagination">
+            <span class="pagination-info" id="paginationInfo">Showing records</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= SECTION 4: CONCURRENCY STRESS TEST VIEW ================= -->
+      <section class="content-view" id="stressView">
+        
+        <div class="stress-layout">
+          
+          <div class="stress-control-card gcp-card">
+            <div class="card-header">
+              <div class="header-titles">
+                <div class="badge-pill demo-badge">SCALABILITY DEMONSTRATION SUITE</div>
+                <h3 class="card-title">High-Concurrency Multi-User Ingestion Simulator</h3>
+                <p class="card-subtitle">Simulates dozens of simultaneous users uploading folders to prove cluster elasticity</p>
+              </div>
+            </div>
+
+            <div class="stress-form">
+              <div class="stress-form-grid">
+                
+                <div class="form-group">
+                  <label class="form-label" for="concurrentUsersInput">
+                    Concurrent Users: <strong class="text-blue" id="usersValDisplay">15 users</strong>
+                  </label>
+                  <input type="range" id="concurrentUsersInput" min="3" max="80" value="15" class="gcp-slider">
+                  <div class="slider-ticks">
+                    <span>3 users</span>
+                    <span>15 users (Recommended)</span>
+                    <span>40 users</span>
+                    <span>80 users (Max Load)</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="trafficPatternSelect">Traffic Pattern</label>
+                  <select id="trafficPatternSelect" class="gcp-select">
+                    <option value="burst">Sudden Burst (All users upload simultaneously)</option>
+                    <option value="ramp">Staggered Ramp (Sequential concurrent stream)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="failureRateSlider">
+                    Injected Failure Ratio: <strong class="text-red" id="failureValDisplay">20%</strong>
+                  </label>
+                  <input type="range" id="failureRateSlider" min="0" max="60" value="20" class="gcp-slider red-slider">
+                  <div class="slider-ticks">
+                    <span>0% (All Pass)</span>
+                    <span>20% (Recommended)</span>
+                    <span>60% (High Violations)</span>
+                  </div>
+                  <span class="form-help">Injects quota limits and disallowed file scripts to demonstrate fault isolation and clear reason reporting.</span>
+                </div>
+
+              </div>
+
+              <div class="stress-actions">
+                <button class="gcp-btn gcp-btn-primary gcp-btn-lg" id="runStressTestBtn">
+                  <span class="material-symbols-outlined">rocket_launch</span>
+                  Launch High-Concurrency Stress Test
+                </button>
+                <button class="gcp-btn gcp-btn-secondary" id="stopStressTestBtn" disabled>
+                  <span class="material-symbols-outlined">stop</span>
+                  Stop Simulation
+                </button>
+              </div>
+            </div>
+
+            <!-- LIVE TEST EXECUTION MONITOR -->
+            <div class="test-monitor-box" id="testMonitorBox" style="display: none;">
+              <div class="monitor-header">
+                <div class="monitor-title">
+                  <span class="spinner-ring"></span>
+                  <span>Stress Test Active: Auto-Scaling Worker Pods</span>
+                </div>
+                <span class="monitor-progress-text" id="testProgressCounter">0 / 15 users completed</span>
+              </div>
+
+              <div class="gcp-progress-track">
+                <div class="gcp-progress-bar progress-animated" id="testProgressBar" style="width: 0%;"></div>
+              </div>
+
+              <div class="live-events-log" id="liveEventsLog"></div>
+            </div>
+
+          </div>
+
+          <!-- ARCHITECTURE HIGHLIGHTS CARD -->
+          <div class="gcp-card highlights-card">
+            <div class="card-header">
+              <h3 class="card-title">Scalability Highlights</h3>
+            </div>
+            
+            <div class="scalability-points">
+              <div class="point-box">
+                <div class="point-num">1</div>
+                <div class="point-content">
+                  <strong>Horizontal Pod Autoscaling (HPA)</strong>
+                  <p>When user concurrency spikes, the cloud coordinator automatically scales worker pods from 2 to 10 nodes across availability zones.</p>
+                </div>
+              </div>
+
+              <div class="point-box">
+                <div class="point-num">2</div>
+                <div class="point-content">
+                  <strong>Least-Connections Balancing</strong>
+                  <p>Incoming folder streams are dynamically dispatched to the least loaded worker node, avoiding thread bottlenecks.</p>
+                </div>
+              </div>
+
+              <div class="point-box">
+                <div class="point-num">3</div>
+                <div class="point-content">
+                  <strong>Zero-Data-Corruption Fault Isolation</strong>
+                  <p>When an invalid or oversized folder is uploaded, only that tenant's upload is rejected with a clear explanation; all other concurrent uploads proceed uninterrupted.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FOLDER EXPLORER MODAL -->
+  <div class="gcp-modal-backdrop" id="folderExplorerModal" style="display: none;">
+    <div class="gcp-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined modal-folder-icon">folder_open</span>
+          <div>
+            <h3 class="modal-title" id="modalFolderName">Folder_Name</h3>
+            <span class="modal-subtitle" id="modalFolderMeta">Uploaded by User | 12 files</span>
+          </div>
+        </div>
+        <button class="icon-btn" id="closeModalBtn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-status-callout" id="modalStatusCallout"></div>
+
+        <h4 class="section-label">FOLDER HIERARCHY & FILES</h4>
+        <div class="modal-file-tree" id="modalFileTree"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="gcp-btn gcp-btn-secondary" id="closeModalFooterBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div class="gcp-toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
