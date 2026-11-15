@@ -46,7 +46,7 @@ An advanced, highly-scalable cloud folder ingestion and processing pipeline. Bui
 
 ---
 
-## 🏃 Running the Project
+## Running the Project
 
 > **No npm install required for Option A** — the cluster console uses pure Node.js built-ins only.
 
@@ -150,12 +150,3 @@ CC CP/
     └── public-cluster/    # Synced copy of Option A dashboard
 ```
 
----
-
-## 🎓 Professor Demo Guide
-
-1. Open the **Live Dashboard**: [https://g86hunter.github.io/File-Processing/](https://g86hunter.github.io/File-Processing/)
-2. Click **"Run Stress Test"** → watch 10–50 simulated users upload simultaneously
-3. Observe the **Activity Feed** — each row shows user name, folder, status, and exact reason if failed
-4. Check the **metrics cards** — total uploads, success rate, failed count, active users
-5. Notice how the system handles all uploads — this proves **horizontal scalability**
